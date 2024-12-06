@@ -19,5 +19,5 @@ router.route('/').get((req, res) => {
   res.send(`<h2>Hello Development API V1 Starter  from ${req.baseUrl}</h2>`)
 })
 
-router.post('/starter',starter)
+router.get('/starter',starter)
 export default router
