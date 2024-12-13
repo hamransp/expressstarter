@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:07:09 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Friday, 13th December 2024 3:50:59 pm
+ * Last Modified: Friday, 13th December 2024 3:57:24 pm
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -49,7 +49,7 @@ app.use(express.json({ strict: false }))
 app.use('/', (req, res) => {
   const response = {
     code: 401,
-    message: 'Selamat Datang Di API Starter Express CI/CD '
+    message: 'Selamat Datang Di API Starter Express CI/CD Gitlab '
   }
   logger.info(
     'Selamat Datang Di API Kirim Email Bank Sultra',
@@ -57,7 +57,7 @@ app.use('/', (req, res) => {
   )
   res
     .status(401)
-    .json(responseApi(404, 'Selamat Datang Di API Starter Express CI/CD'))
+    .json(responseApi(404, 'Selamat Datang Di API Starter Express CI/CD Gitlab'))
 })
 
 export { app, port }
