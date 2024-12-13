@@ -1,75 +1,93 @@
-/*
- * File: winston.lib.ts
- * File Created: Monday, 3rd June 2024 3:38:59 pm
- * Url: https://arungpalakka.com
- * Author: Rede (hamransp@gmail.com)
- * Copyright @ 2024 Rede Studio
- */
 import winston from 'winston'
+import Transport from 'winston-transport'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { config } from 'dotenv'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 
-// import ecsFormat from '@elastic/ecs-winston-format'
 config()
+const withRetry = async (fn: () => Promise<any>, retries = 3): Promise<any> => {
+  try {
+    return await fn()
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return withRetry(fn, retries - 1)
+    }
+    throw error
+  }
+}
+
+class LogstashTransport extends Transport {
+  constructor(opts?: Transport.TransportStreamOptions) {
+    super(opts)
+  }
+
+  private async sendToLogstash(info: any) {
+    const logData = {
+      ...info,
+      prod_id: process.env.LOGSTASH_PROD_ID || 'unknown',
+      timestamp: new Date().toISOString()
+    }
+
+    try {
+      await withRetry(async () => {
+        await axios.post(process.env.LOGSTASH_URL as string, logData, {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      })
+    } catch (error) {
+      console.error('Failed to send logs to Logstash after 3 retries:', error)
+    }
+  }
+
+  log(info: any, callback: () => void) {
+    setImmediate(() => {
+      this.sendToLogstash(info)
+    })
+    callback()
+  }
+}
 
 const myFormatter = winston.format((info) => {
   info.appTimestamp = new Date().toString()
   return info
 })()
 
-// export const logger = winston.createLogger({
-//   // format: ecsFormat(),
-//   format: winston.format.combine(myFormatter, winston.format.json()),
-//   transports: [
-//     // new winston.transports.Console(),
-//     new DailyRotateFile({
-//       datePattern: 'YYYY-MM-DD',
-//       dirname: process.env.LOG_DIRECTORY,
-//       level: 'error',
-//       filename: 'error-%DATE%.log',
-//       // zippedArchive: true,
-//       maxSize: '1m',
-//       handleExceptions: process.env.LOG_EXCEPTIONS ? true : false,
-//       handleRejections: process.env.LOG_REJECTIONS ? true : false,
-//     }),
-//     new DailyRotateFile({
-//       datePattern: 'YYYY-MM-DD',
-//       dirname: process.env.LOG_DIRECTORY,
-//       level: 'silly',
-//       filename: '%DATE%.log',
-//       // zippedArchive: true,
-//       maxSize: '1m',
-//     }),
-//   ],
-// })
+// Get file transport configuration
+const getFileTransport = (isError: boolean = false) => {
+  return new DailyRotateFile({
+    datePattern: 'YYYY-MM-DD',
+    dirname: process.env.LOG_DIRECTORY,
+    level: isError ? 'error' : 'silly',
+    filename: isError ? 'error-%DATE%.log' : '%DATE%.log',
+    maxSize: '1m',
+    handleExceptions: isError && process.env.LOG_EXCEPTIONS ? true : false,
+    handleRejections: isError && process.env.LOG_REJECTIONS ? true : false,
+  })
+}
+
+// Determine which transports to use based on LOGSTASH_ENABLED
+const getTransports = (isError: boolean = false): Transport[] => {
+  const transports: Transport[] = [getFileTransport(isError)]
+
+  if (process.env.LOGSTASH_ENABLED === 'TRUE') {
+    transports.push(new LogstashTransport({ 
+      level: isError ? 'error' : 'info',
+    }))
+  }
+
+  return transports
+}
+
 
 const errorLogger = winston.createLogger({
   format: winston.format.combine(myFormatter, winston.format.json()),
-  transports: [
-    new DailyRotateFile({
-      datePattern: 'YYYY-MM-DD',
-      dirname: process.env.LOG_DIRECTORY,
-      level: 'error',
-      filename: 'error-%DATE%.log',
-      maxSize: '1m',
-      handleExceptions: process.env.LOG_EXCEPTIONS ? true : false,
-      handleRejections: process.env.LOG_REJECTIONS ? true : false,
-    }),
-  ],
+  transports: getTransports(true),
 })
 
 const infoLogger = winston.createLogger({
   format: winston.format.combine(myFormatter, winston.format.json()),
-  transports: [
-    new DailyRotateFile({
-      datePattern: 'YYYY-MM-DD',
-      dirname: process.env.LOG_DIRECTORY,
-      level: 'silly',
-      filename: '%DATE%.log',
-      maxSize: '1m',
-    }),
-  ],
+  transports: getTransports(false),
 })
 
 export const logger = {
@@ -81,34 +99,7 @@ export const logger = {
   silly: (message: string, meta?: any) => infoLogger.silly(message, meta),
 }
 
-// export const logFormat = (req: any, res: any) => {
-//   const data = res.data ? JSON.stringify(res.data).substring(0, 200) : ''
-
-//   return {
-//     data: {
-//       request: {
-//         method: req.method,
-//         headers: req.headers,
-//         body: req.body,
-//       },
-//       response: {
-//         code: res.code,
-//         message: res.message,
-//         data: data,
-//       },
-//     },
-//     url: {
-//       path: req.originalUrl,
-//       domain: req.get('host'),
-//       full: req.protocol + '://' + req.get('host') + req.originalUrl,
-//     },
-//     client: {
-//       ip: req.header('x-forwarded-for') || req.socket.remoteAddress,
-//       address: req.socket.remoteAddress,
-//       port: req.socket.remotePort,
-//     },
-//   }
-// }
+// Existing logFormat functions remain unchanged
 export const logFormat = (clientRequest: any, clientResponse: any) => {
   return {
     client: {
@@ -138,39 +129,8 @@ export const logFormat = (clientRequest: any, clientResponse: any) => {
   }
 }
 
-export const logFormatValidation = (
-  clientRequest: any,
-  clientResponse: any
-) => {
-  return {
-    client: {
-      request: {
-        method: clientRequest.method,
-        headers: clientRequest.headers,
-        body: clientRequest.body,
-        url: {
-          path: clientRequest.originalUrl,
-          domain: clientRequest.get('host'),
-          full:
-            clientRequest.protocol +
-            '://' +
-            clientRequest.get('host') +
-            clientRequest.originalUrl,
-        },
-        client: {
-          ip:
-            clientRequest.header('x-forwarded-for') ||
-            clientRequest.socket.remoteAddress,
-          address: clientRequest.socket.remoteAddress,
-          port: clientRequest.socket.remotePort,
-        },
-      },
-      response: clientResponse,
-    },
-  }
-}
 
-// function log format untuk
+export const logFormatValidation = logFormat
 export const logFormatAxios = (
   config: AxiosRequestConfig,
   response: AxiosResponse | any

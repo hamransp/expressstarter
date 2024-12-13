@@ -1,0 +1,39 @@
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  # Gunakan Docker socket lokal
+  DOCKER_HOST: "unix:///var/run/docker.sock"
+
+stages:
+  - build
+  - deploy
+
+build:
+  image: docker:latest
+  stage: build
+  # Hapus service docker:dind karena kita menggunakan Docker socket host
+  script:
+    - echo "Starting build process..."
+    - docker info
+    - docker build -t $CI_PROJECT_NAME:latest .
+  #  - docker build -t $CI_PROJECT_NAME:$CI_COMMIT_SHA .
+  #  - docker tag $CI_PROJECT_NAME:$CI_COMMIT_SHA $CI_PROJECT_NAME:latest
+    - docker images
+  only:
+    - main
+  tags:
+    - docker
+
+deploy:
+  image: docker:latest
+  stage: deploy
+  script:
+    - echo "Starting deployment process..."
+    - docker container ls
+    - docker container stop $CI_PROJECT_NAME || true
+    - docker container rm $CI_PROJECT_NAME || true
+    - docker run -d --name $CI_PROJECT_NAME -p 4010:3000 $CI_PROJECT_NAME:latest
+    - docker container ls
+  only:
+    - main
+  tags:
+    - docker

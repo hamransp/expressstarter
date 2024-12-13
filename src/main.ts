@@ -1,6 +1,8 @@
 import { app, port } from './app/api'
 import routes from './routes/v1/index.route'
 import { responseApi } from './helpers/responseApi.helper'
+// import { logger } from './utils/logger'
+import { logger } from './libs/winston.lib'
 
 async function initializeServer() {
   let server: any = null
@@ -15,6 +17,7 @@ async function initializeServer() {
           .listen(port)
           .on('listening', () => {
             console.log('##======= App is running on PORT :', port, ' =======##')
+            logger.info('##======= App is running on PORT :' + port + ' =======##')
             console.log(responseApi(200, 'Ready... :)'))
             // mainBot()
             resolve(server)
