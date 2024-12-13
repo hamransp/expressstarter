@@ -12,7 +12,7 @@ build:
   stage: build
   # Hapus service docker:dind karena kita menggunakan Docker socket host
   script:
-    - echo "Starting build process mihh..."
+    - echo "Starting build process mihh...a"
     - docker info
     - docker build -t $CI_PROJECT_NAME:latest .
   #  - docker build -t $CI_PROJECT_NAME:$CI_COMMIT_SHA .
