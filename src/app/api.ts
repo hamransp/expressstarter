@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:07:09 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Tuesday, 31st December 2024 10:16:15 am
+ * Last Modified: Thursday, 16th January 2025 11:51:27 am
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -56,8 +56,8 @@ app.use('/', (req, res) => {
     logFormat(req, response)
   )
   res
-    .status(401)
-    .json(responseApi(404, 'Selamat Datang Di API Starter Express CI/CD Gitlab OK'))
+    .status(404)
+    .json(responseApi(404, 'Selamat Datang Di API Starter Express CI/CD'))
 })
 
 export { app, port }
