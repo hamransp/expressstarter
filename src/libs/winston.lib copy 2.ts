@@ -1,3 +1,12 @@
+/*
+ * File: winston.lib copy 2.ts
+ * Project: starterexpress
+ * File Created: Tuesday, 21st January 2025 3:29:29 pm
+ * Author: Rede (hamransp@gmail.com)
+ * Last Modified: Tuesday, 21st January 2025 3:29:55 pm
+ * Copyright 2017 - 2022 10RI Dev
+ */
+
 import winston from 'winston'
 import Transport from 'winston-transport'
 import DailyRotateFile from 'winston-daily-rotate-file'
@@ -26,6 +35,12 @@ interface LogInfo extends winston.Logform.TransformableInfo {
     message?: string;
     body?: any;
   };
+  error?: {
+    message?: string;
+    stack?: string;
+    type?: string;
+    details?: any;
+  };
   [key: string]: any;
 }
 
@@ -46,6 +61,15 @@ interface LogRequest {
     remotePort?: number;
   };
   get?: (name: string) => string | undefined;
+}
+
+// Interface untuk error yang lebih terstruktur
+interface DetailedError extends Error {
+  type?: string;
+  details?: any;
+  sqlMessage?: string;
+  sql?: string;
+  code?: string | number;
 }
 
 class LogstashTransport extends Transport {
@@ -87,7 +111,7 @@ const timestampFormat = winston.format((info: LogInfo) => {
 // Reorder fields and clean up format
 const reorderFormat = winston.format((info: LogInfo) => {
   const { timestamp, level, message, requestId, ...rest } = info;
-  const { response, request, ...otherRest } = rest;
+  const { response, request, error, ...otherRest } = rest;
   
   const cleanResponse = response ? {
     statusCode: response.statusCode,
@@ -107,7 +131,8 @@ const reorderFormat = winston.format((info: LogInfo) => {
       body: request.body,
       client: request.client
     } : undefined,
-    response: cleanResponse
+    response: cleanResponse,
+    ...(error && { error })
   };
 });
 
@@ -163,8 +188,36 @@ export const logger = {
   silly: (message: string, meta?: any) => infoLogger.silly({ message, ...meta }),
 }
 
-export const logFormat = (clientRequest: LogRequest, clientResponse: LogResponse) => {
-  return {
+const sanitizeError = (error: DetailedError): { publicMessage: string; logDetail: any } => {
+  // Default error message untuk client
+  let publicMessage = 'Internal Server Error';
+  
+  // Detail error untuk logging
+  const logDetail = {
+    message: error.message,
+    type: error.type || error.name,
+    stack: error.stack,
+    details: error.details || {},
+  };
+
+  // Tambahkan detail SQL error jika ada
+  if (error.sqlMessage) {
+    logDetail.details.sqlMessage = error.sqlMessage;
+    logDetail.details.sql = error.sql;
+    // Public message tetap generic untuk database error
+    publicMessage = 'Database operation failed';
+  }
+
+  // Tambahkan error code jika ada
+  if (error.code) {
+    logDetail.details.errorCode = error.code;
+  }
+
+  return { publicMessage, logDetail };
+};
+
+export const logFormat = (clientRequest: LogRequest, clientResponse: LogResponse, error?: DetailedError) => {
+  const baseLog = {
     request: {
       method: clientRequest.method,
       body: clientRequest.body,
@@ -177,10 +230,26 @@ export const logFormat = (clientRequest: LogRequest, clientResponse: LogResponse
       },
     },
     response: clientResponse,
-  }
-}
+  };
 
-export const logFormatValidation = logFormat
+  // Jika ada error, tambahkan detail error ke log tapi tidak ke response
+  if (error) {
+    const { publicMessage, logDetail } = sanitizeError(error);
+    return {
+      ...baseLog,
+      error: logDetail,
+      response: {
+        ...clientResponse,
+        message: publicMessage,
+      },
+    };
+  }
+
+  return baseLog;
+};
+
+export const logFormatValidation = logFormat;
+
 export const logFormatAxios = (
   config: AxiosRequestConfig,
   response: AxiosResponse | any
@@ -202,7 +271,9 @@ export const logFormatAxios = (
       ? {
           message: response.message,
           stack: response.stack,
+          type: 'AxiosError',
+          details: response.response?.data
         }
       : undefined,
   }
-}
+};

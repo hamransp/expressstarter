@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:07:09 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Thursday, 16th January 2025 11:51:27 am
+ * Last Modified: Thursday, 30th January 2025 12:03:17 pm
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -15,12 +15,13 @@ import { rateLimit } from 'express-rate-limit'
 import v1 from '../routes/v1/index.route'
 // import v2 from '../routes/v2/index.route'
 import { logger, logFormat } from '../libs/winston.lib'
-import { responseApi } from '../helpers/responseApi.helper'
-
+import { ApiResponse } from '../helpers/responseApi.helper';
+import { requestIdMiddleware } from '../middlewares/requestId.middleware';
 dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 4888
+app.use(requestIdMiddleware)
 
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 15 minutes
@@ -36,7 +37,8 @@ const limiter = rateLimit({
       'Anda telah melebihi batas request, silahkan coba lagi nanti',
       logFormat(req, response)
     )
-    res.status(429).json(responseApi(429, response.message))
+    // res.status(429).json(responseApi(429, response.message))
+    // return ApiResponse.error(res, 409)
   },
 })
 
@@ -55,9 +57,7 @@ app.use('/', (req, res) => {
     'Selamat Datang Di API Kirim Email Bank Sultra',
     logFormat(req, response)
   )
-  res
-    .status(404)
-    .json(responseApi(404, 'Selamat Datang Di API Starter Express CI/CD'))
+  return ApiResponse.success(res, 'Selamat Datang Di API Kirim Email Bank Sultra', 200);
 })
 
 export { app, port }

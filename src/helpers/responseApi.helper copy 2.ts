@@ -1,3 +1,12 @@
+/*
+ * File: responseApi.helper copy 2.ts
+ * Project: starterexpress
+ * File Created: Tuesday, 21st January 2025 3:30:06 pm
+ * Author: Rede (hamransp@gmail.com)
+ * Last Modified: Tuesday, 21st January 2025 3:30:06 pm
+ * Copyright 2017 - 2022 10RI Dev
+ */
+
 import { Response } from 'express';
 import { logger, logFormat } from '../libs/winston.lib';
 
@@ -22,24 +31,10 @@ interface ApiErrorResponse {
   requestId: string;
 }
 
-interface ServerErrorResponse {
-  message: string;
-  requestId: string;
-}
-
 export interface ApiSuccessResponse<T> {
   data: T;
   meta?: ApiMetadata;
   requestId: string;
-}
-
-interface ExtendedError extends Error {
-  [key: string]: any;
-  sqlMessage?: string;
-  sql?: string;
-  code?: string | number;
-  type?: string;
-  details?: any;
 }
 
 export class ApiResponse {
@@ -47,21 +42,13 @@ export class ApiResponse {
     return res.req.requestId || 'unknown';
   }
 
-  private static formatErrorForLog(error: ExtendedError) {
-    const { message, stack, name, ...rest } = error;
-    return {
-      type: rest.type || name,
-      message,
-      stack,
-      details: {
-        ...rest,
-        sqlMessage: rest.sqlMessage,
-        sql: rest.sql,
-        code: rest.code
-      }
-    };
-  }
-
+  /**
+   * Send a success response
+   * @param res Express Response object
+   * @param data Response data
+   * @param httpCode HTTP status code (default: 200)
+   * @param meta Optional metadata (pagination, etc)
+   */
   static success<T>(
     res: Response,
     data: T,
@@ -92,9 +79,13 @@ export class ApiResponse {
   }
 
   /**
-   * Handle non-500 errors (client errors like 400, 401, 403, 404, 422)
+   * Send an error response
+   * @param res Express Response object
+   * @param httpCode HTTP status code
+   * @param message Error message
+   * @param details Optional error details
    */
-  private static clientError(
+  static error(
     res: Response,
     httpCode: number,
     message: string,
@@ -112,11 +103,11 @@ export class ApiResponse {
       'Cache-Control': 'no-store',
     });
 
-    logger.error('API Client Error Response', {
+    logger.error('API Error Response', {
       requestId,
       ...logFormat(res.req, {
         statusCode: httpCode,
-        body: errorResponse
+        body: { message, details }
       })
     });
 
@@ -124,39 +115,11 @@ export class ApiResponse {
   }
 
   /**
-   * Handle server errors (500)
-   * Always returns standard "Internal Server Error" message to client
-   * but logs detailed error information
+   * Send a created response (201)
+   * @param res Express Response object
+   * @param data Created resource data
+   * @param meta Optional metadata
    */
-  static error(
-    res: Response,
-    error: ExtendedError
-  ): void {
-    const requestId = this.getRequestId(res);
-    const errorResponse: ServerErrorResponse = {
-      message: 'Internal Server Error',
-      requestId
-    };
-
-    res.set({
-      'X-Request-ID': requestId,
-      'Cache-Control': 'no-store',
-    });
-
-    const logData = logFormat(res.req, {
-      statusCode: 500,
-      body: errorResponse
-    });
-
-    logger.error('API Server Error Response', {
-      requestId,
-      ...logData,
-      error: this.formatErrorForLog(error)
-    });
-
-    res.status(500).json(errorResponse);
-  }
-
   static created<T>(
     res: Response,
     data: T,
@@ -165,6 +128,10 @@ export class ApiResponse {
     this.success(res, data, 201, meta);
   }
 
+  /**
+   * Send a no content response (204)
+   * @param res Express Response object
+   */
   static noContent(res: Response): void {
     const requestId = this.getRequestId(res);
     
@@ -184,31 +151,51 @@ export class ApiResponse {
     res.status(204).send();
   }
 
+  /**
+   * Send a validation error response (422)
+   * @param res Express Response object
+   * @param details Validation error details
+   */
   static validationError(
     res: Response,
     details: ApiErrorDetail[]
   ): void {
-    this.clientError(res, 422, 'Validation Error', details);
+    this.error(res, 422, 'Validation Error', details);
   }
 
+  /**
+   * Send a not found error response (404)
+   * @param res Express Response object
+   * @param message Custom not found message
+   */
   static notFound(
     res: Response,
     message: string = 'Resource not found'
   ): void {
-    this.clientError(res, 404, message);
+    this.error(res, 404, message);
   }
 
+  /**
+   * Send an unauthorized error response (401)
+   * @param res Express Response object
+   * @param message Custom unauthorized message
+   */
   static unauthorized(
     res: Response,
     message: string = 'Unauthorized access'
   ): void {
-    this.clientError(res, 401, message);
+    this.error(res, 401, message);
   }
 
+  /**
+   * Send a forbidden error response (403)
+   * @param res Express Response object
+   * @param message Custom forbidden message
+   */
   static forbidden(
     res: Response,
     message: string = 'Access forbidden'
   ): void {
-    this.clientError(res, 403, message);
+    this.error(res, 403, message);
   }
 }

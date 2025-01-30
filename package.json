@@ -21,12 +21,23 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@types/ibm_db": "^3.2.0",
+    "@types/node-rsa": "^1.1.4",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.4.1",
+    "ibm_db": "^3.3.0",
+    "node-rsa": "^1.1.1",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "redis": "^4.7.0",
+    "sequelize": "^6.37.5",
+    "uuid": "^11.0.5",
     "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^3.24.1"
   }
 }

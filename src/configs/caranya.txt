@@ -1,0 +1,9 @@
+## Jalankan Perintah ini di terminal : 
+npx ts-node ./src/configs/keyGenerator.ts
+
+## Ikuti Step by Step 
+
+## Pastikan variabel di .env ada :
+DATABASE=samsatdb_development
+CONFIG_MASTER_KEY=YourVerySecureMasterKey2024
+CONFIG_ADDITIONAL_KEY=YourAdditionalSecurityKey2024

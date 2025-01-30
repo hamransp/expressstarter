@@ -6,7 +6,12 @@
  * Copyright @ 2024 Rede Studio
  */
 import express from 'express'
-import { starter } from '../../controllers/starter.controller'
+import { starter, login, refresh, systemHost } from '../../controllers/starter.controller'
+import { validate, validateLogin } from '../../middlewares/validator.middleware'
+import { loginRule } from '../../rules/auth/login.rule'
+import { starterRule } from '../../rules/starter.rule'
+import { refreshTokennRule } from '../../rules/auth/refreshToken.rule'
+
 const router = express.Router()
 router.use(
   express.json({
@@ -19,5 +24,7 @@ router.route('/').get((req, res) => {
   res.send(`<h2>Hello Development API V1 Starter  from ${req.baseUrl}</h2>`)
 })
 
-router.get('/starter',starter)
+router.get('/starter',validate(starterRule), starter)
+router.post('/login', validateLogin(loginRule), starter)
+router.get('/systemhost',systemHost)
 export default router
