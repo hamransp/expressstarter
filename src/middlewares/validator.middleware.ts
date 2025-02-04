@@ -60,17 +60,6 @@ export const validate = (schema: ZodSchema<any>) => {
 
     if (!result.success) {
       const validationErrors = handleZodError(result.error);
-      
-      // logger.error('Validation Error', {
-      //   requestId,
-      //   ...logFormat(req, {
-      //     statusCode: 422,
-      //     body: {
-      //       message: 'Validation Error',
-      //       details: validationErrors
-      //     }
-      //   })
-      // });
 
       return ApiResponse.validationError(res, validationErrors);
     }

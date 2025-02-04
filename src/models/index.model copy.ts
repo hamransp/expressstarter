@@ -5,28 +5,20 @@
  * Author: tsi (hamransp@gmail.com)
  * Copyright @ 2024 Rede Studio
  */
-import Database from '../services/database.service'
+import Database from '../services/pg.service'
 // import SystemHost from './SystemHost.model'
 import SystemHostDB2 from './SystemHostDB2.model'
-import SystemHost from './SystemHost.model'
-
 
 const db = Database.getInstance()
 
 export const initializeModels = async () => {
-  const pgSequelize = await db.connect('samsatdb')
-  SystemHost.initialize(pgSequelize)
-
-  const db2Sequelize = await db.connect('DBQA')
-  SystemHostDB2.initialize(db2Sequelize)
-
-  const samsatnewSequelize = await db.connect('samsatnew')
+  const sequelize = await db.connect()
+  // SystemHost.initialize(sequelize)
+  SystemHostDB2.initialize(sequelize)
 
   return {
-    pgSequelize,
-    db2Sequelize,
-    samsatnewSequelize,
-    SystemHost,
+    sequelize,
+    // SystemHost
     SystemHostDB2
   }
 }

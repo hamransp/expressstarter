@@ -3,16 +3,18 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:02:18 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Thursday, 30th January 2025 1:23:41 pm
+ * Last Modified: Thursday, 30th January 2025 2:31:48 pm
  * Copyright 2017 - 2022 10RI Dev
  */
 import { Request, Response } from 'express'
 import { ApiResponse } from '../helpers/responseApi.helper';
 import { logger } from '../utils/logger'
-
+import Database from '../services/database.service'
+import { QueryTypes } from 'sequelize'
 
 // Model
-import SystemHostDB2 from '../models/SystemHostDB2.model';
+import SystemHost from '../models/SystemHost.model';
+import SystemHostdb2 from '../models/SystemHostDB2.model';
 
 export const starter = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -67,7 +69,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 }
 export const systemHost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const modelSystemHost = await SystemHostDB2.findOne()
+    const modelSystemHost = await SystemHost.findOne()
     return ApiResponse.success(res, modelSystemHost);
   } catch (error) {
     if (error instanceof Error && error.name === 'EmailValidationError') {
@@ -80,3 +82,40 @@ export const systemHost = async (req: Request, res: Response): Promise<void> => 
   }
 }
 
+export const systemHostdb2 = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const modelSystemHost = await SystemHostdb2.findOne()
+    return ApiResponse.success(res, modelSystemHost);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'EmailValidationError') {
+      return ApiResponse.validationError(res, [
+        { field: 'inputan', message: error.message }
+      ]);
+    }
+    logger.error('Error in starter controller:', error)
+    return ApiResponse.error(res, new Error('Unknown error occurred'));
+  }
+}
+
+
+export const systemHostSamsatnew = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // const modelSystemHost = await SystemHostdb2.findOne()
+    const db = Database.getInstance()
+    const initSamsatNew = await db.connect('samsatnew')
+
+    const query = await initSamsatNew.query('select * from samsat.system_host', {
+      type: QueryTypes.SELECT,
+    });
+    console.log("============OK==========", query);
+    return ApiResponse.success(res, query);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'EmailValidationError') {
+      return ApiResponse.validationError(res, [
+        { field: 'inputan', message: error.message }
+      ]);
+    }
+    logger.error('Error in starter controller:', error)
+    return ApiResponse.error(res, new Error('Unknown error occurred'));
+  }
+}

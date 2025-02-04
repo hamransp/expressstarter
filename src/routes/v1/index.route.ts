@@ -6,7 +6,7 @@
  * Copyright @ 2024 Rede Studio
  */
 import express from 'express'
-import { starter, login, refresh, systemHost } from '../../controllers/starter.controller'
+import { starter, login, refresh, systemHost, systemHostdb2, systemHostSamsatnew } from '../../controllers/starter.controller'
 import { validate, validateLogin } from '../../middlewares/validator.middleware'
 import { loginRule } from '../../rules/auth/login.rule'
 import { starterRule } from '../../rules/starter.rule'
@@ -27,4 +27,6 @@ router.route('/').get((req, res) => {
 router.get('/starter',validate(starterRule), starter)
 router.post('/login', validateLogin(loginRule), starter)
 router.get('/systemhost',systemHost)
+router.get('/systemhostdb2',systemHostdb2)
+router.get('/systemhostsamsatnew',systemHostSamsatnew)
 export default router

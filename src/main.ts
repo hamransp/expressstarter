@@ -20,12 +20,15 @@ async function initializeServer() {
       }
 
       // Inisialisasi model-model
-      const { sequelize } = await initializeModels()
+      const { pgSequelize, db2Sequelize } = await initializeModels()
       console.log('Models have been initialized successfully.')
 
       // Authenticate database connection
-      await sequelize.authenticate()
+      await pgSequelize.authenticate()
       console.log('Database connection has been established successfully.')
+
+      await db2Sequelize.authenticate()
+      console.log('Database 2 connection has been established successfully.')
 
       app.use(routes)
 
