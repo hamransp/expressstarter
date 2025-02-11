@@ -211,4 +211,12 @@ export class ApiResponse {
   ): void {
     this.clientError(res, 403, message);
   }
+
+  static customError(
+    res: Response,
+    code: number,
+    message: string = 'Error'
+  ): void {
+    this.clientError(res, code, message);
+  }
 }
