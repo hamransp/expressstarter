@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Thursday, 30th January 2025 1:49:43 pm
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Tuesday, 4th February 2025 8:27:01 am
+ * Last Modified: Thursday, 20th February 2025 10:30:44 am
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -15,6 +15,7 @@ import fs from 'fs'
 import { config } from 'dotenv'
 import * as crypto from 'crypto'
 import { logger } from '../libs/winston.lib'
+import { getRequestId } from '../helpers/requestContext.helper';
 config()
 
 interface DatabaseConfig {
@@ -74,7 +75,10 @@ class MultiDatabase {
             charset: 'utf8mb4',
             collate: 'utf8mb4_general_ci',
           },
-          logging: this.queryLogger.bind(this),
+          // logging: this.queryLogger.bind(this),
+          logging: (sql: string, timing?: number) => {
+            this.queryLogger(sql, timing);
+          },
           dialectOptions,
         }
       )
@@ -168,11 +172,21 @@ class MultiDatabase {
     })
   }
 
+  // private queryLogger(sql: string, timing?: number) {
+  //   logger.info('Database Query', {
+  //     sql: this.sanitizeQuery(sql),
+  //     details: timing,
+  //     timestamp: new Date().toISOString()
+  //   });
+  // }
   private queryLogger(sql: string, timing?: number) {
+    const requestId = getRequestId();
+    
     logger.info('Database Query', {
       sql: this.sanitizeQuery(sql),
       details: timing,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      requestId
     });
   }
 

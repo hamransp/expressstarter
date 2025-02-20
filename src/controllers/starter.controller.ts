@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:02:18 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Thursday, 30th January 2025 2:31:48 pm
+ * Last Modified: Thursday, 20th February 2025 10:52:10 am
  * Copyright 2017 - 2022 10RI Dev
  */
 import { Request, Response } from 'express'
@@ -69,8 +69,24 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 }
 export const systemHost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const modelSystemHost = await SystemHost.findOne()
-    return ApiResponse.success(res, modelSystemHost);
+    // const modelSystemHostdb2 = await SystemHostdb2.findOne() || {}
+    const modelSystemHost = await SystemHost.findOne() || {}
+    
+    const db = Database.getInstance()
+    const initSamsatNew = await db.connect('samsatnew')
+    const giro_polri = await initSamsatNew.query('select giro_polri from samsat.system_host', {
+      type: QueryTypes.SELECT,
+    });
+
+    console.log("============giro_polri==========", giro_polri);
+
+    const data = {
+      ...modelSystemHost,
+      giro_polri
+    }
+    // gabung data modelSystemHost dan giro_polri
+   
+    return ApiResponse.success(res, data);
   } catch (error) {
     if (error instanceof Error && error.name === 'EmailValidationError') {
       return ApiResponse.validationError(res, [

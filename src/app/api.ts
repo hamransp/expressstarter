@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Friday, 6th December 2024 9:07:09 am
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Thursday, 30th January 2025 12:03:17 pm
+ * Last Modified: Thursday, 20th February 2025 10:03:56 am
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -54,10 +54,10 @@ app.use('/', (req, res) => {
     message: 'Selamat Datang Di API Starter Express CI/CD Gitlab '
   }
   logger.info(
-    'Selamat Datang Di API Kirim Email Bank Sultra',
+    'Selamat Datang Di API Starter Bank Sultra',
     logFormat(req, response)
   )
-  return ApiResponse.success(res, 'Selamat Datang Di API Kirim Email Bank Sultra', 200);
+  return ApiResponse.success(res, 'Selamat Datang Di API Starter Bank Sultra', 200);
 })
 
 export { app, port }
