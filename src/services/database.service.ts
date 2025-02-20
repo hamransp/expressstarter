@@ -3,7 +3,7 @@
  * Project: starterexpress
  * File Created: Thursday, 30th January 2025 1:49:43 pm
  * Author: Rede (hamransp@gmail.com)
- * Last Modified: Thursday, 20th February 2025 10:30:44 am
+ * Last Modified: Thursday, 20th February 2025 12:05:23 pm
  * Copyright 2017 - 2022 10RI Dev
  */
 
@@ -80,6 +80,8 @@ class MultiDatabase {
             this.queryLogger(sql, timing);
           },
           dialectOptions,
+          benchmark: true,
+          logQueryParameters: true,
         }
       )
 
@@ -184,7 +186,7 @@ class MultiDatabase {
     
     logger.info('Database Query', {
       sql: this.sanitizeQuery(sql),
-      details: timing,
+      duration: timing ? `${timing}ms` : undefined,
       timestamp: new Date().toISOString(),
       requestId
     });
